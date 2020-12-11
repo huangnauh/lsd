@@ -13,7 +13,7 @@ use super::{Owner, Permissions};
 
 const BUF_SIZE: u32 = 256;
 
-pub fn get_file_data(path: &Path) -> Result<(Owner, Permissions), io::Error> {
+pub fn get_file_data(path: &Path, permission: bool) -> Result<(Owner, Permissions), io::Error> {
     // Overall design:
     // This function allocates some data with GetNamedSecurityInfoW,
     // manipulates it only through WinAPI calls (treating the pointers as
@@ -84,6 +84,29 @@ pub fn get_file_data(path: &Path) -> Result<(Owner, Permissions), io::Error> {
 
     // This structure will be returned
     let owner = Owner::new(owner, group);
+
+    if !permission {
+        unsafe {
+            winapi::um::winbase::LocalFree(sd_ptr);
+        }
+        return Ok((owner, Permissions{
+            user_read: true,
+            user_write: false,
+            user_execute: false,
+    
+            group_read: true,
+            group_write: false,
+            group_execute: false,
+    
+            other_read: true,
+            other_write: false,
+            other_execute: false,
+    
+            sticky: false,
+            setuid: false,
+            setgid: false,
+        }))
+    }
 
     // Get the size and allocate bytes for a 1-sub-authority SID
     // 1 sub-authority because the Windows World SID is always S-1-1-0, with

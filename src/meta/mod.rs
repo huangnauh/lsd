@@ -203,8 +203,9 @@ impl Meta {
         #[cfg(unix)]
         let permissions = Permissions::from(&metadata);
 
+        //TODO: cache permissions for speed
         #[cfg(windows)]
-        let (owner, permissions) = windows_utils::get_file_data(&path)?;
+        let (owner, permissions) = windows_utils::get_file_data(&path, false)?;
 
         let file_type = FileType::new(&metadata, symlink_meta.as_ref(), &permissions);
         let name = Name::new(&path, file_type);
